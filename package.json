@@ -1,0 +1,27 @@
+{
+  "author": "Kirby Wu",
+  "name": "geoconvert",
+  "description": "conversion between osm, shp, geojson and topojson",
+  "version": "0.0.1",
+  "homepage": "https://github.com/zbryikt/geoconvert",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zbryikt/geoconvert"
+  },
+  "engines": {
+    "node": ">=0.8.18",
+    "npm": ">=1.2.2"
+  },
+  "scripts": {
+  },
+  "dependencies": {
+    "coord": "git://github.com/zbryikt/coord#master",
+    "zlib": "=1.0.5",
+    "MD5": "=1.2.1",
+    "bluebird": "=2.9.24",
+    "osmtogeojson": "=2.2.5",
+    "xmldom": "=0.1.19",
+    "topojson": "=1.6.18",
+    "shapefile": "=0.3.0"
+  }
+}
