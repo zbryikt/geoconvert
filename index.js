@@ -264,16 +264,44 @@ geoconvert = {
   topojson: {
     merge: function(topodata, geometryListHash){
       return new bluebird(function(res, rej){
-        var obj, k, v;
+        var fill, obj, k, v, ret, ref$, used, list, i$, len$, item, to$, idx;
+        fill = function(a, h){
+          var i$, len$, item, results$ = [];
+          if (typeof a === typeof []) {
+            for (i$ = 0, len$ = a.length; i$ < len$; ++i$) {
+              item = a[i$];
+              results$.push(fill(item, h));
+            }
+            return results$;
+          } else {
+            return h[a] = 1;
+          }
+        };
         for (obj in topodata.objects) {
           topodata.objects[obj].geometries = (fn$());
         }
+        ref$ = [{}, []], used = ref$[0], list = ref$[1];
+        for (obj in topodata.objects) {
+          for (i$ = 0, len$ = (ref$ = topodata.objects[obj].geometries).length; i$ < len$; ++i$) {
+            item = ref$[i$];
+            fill(item.arcs, used);
+          }
+        }
+        for (i$ = 0, to$ = topodata.arcs.length; i$ < to$; ++i$) {
+          idx = i$;
+          list.push(used[idx]
+            ? topodata.arcs[idx]
+            : []);
+        }
+        topodata.arcs = list;
         return res(topodata);
         function fn$(){
           var ref$, results$ = [];
           for (k in ref$ = geometryListHash[obj]) {
             v = ref$[k];
-            results$.push(topojson.mergeArcs(topodata, v));
+            ret = topojson.mergeArcs(topodata, v.list);
+            ret.properties = v.properties;
+            results$.push(ret);
           }
           return results$;
         }

@@ -136,9 +136,23 @@ geoconvert = do
       res object
 
   topojson: do
+
     merge: (topodata, geometry-list-hash) -> new bluebird (res, rej) ->
+      fill = (a, h) ->
+        if typeof(a) == typeof([]) => [fill(item,h) for item in a]
+        else h[a] = 1
       for obj of topodata.objects =>
-        topodata.objects[obj]geometries = [topojson.mergeArcs topodata, v for k,v of geometry-list-hash[obj]]
+        topodata.objects[obj]geometries = for k,v of geometry-list-hash[obj]
+          ret = topojson.mergeArcs topodata, v.list
+          ret.properties = v.properties
+          ret
+      [used, list] = [{}, []]
+      for obj of topodata.objects
+        for item in topodata.objects[obj]geometries => fill item.arcs, used
+      for idx from 0 til topodata.arcs.length
+        list.push if used[idx] => topodata.arcs[idx] else []
+      topodata.arcs = list
+
       res topodata
 
 module.exports = geoconvert
