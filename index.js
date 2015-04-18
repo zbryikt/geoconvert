@@ -264,7 +264,8 @@ geoconvert = {
   topojson: {
     merge: function(topodata, geometryListHash){
       return new bluebird(function(res, rej){
-        var fill, obj, k, v, ret, ref$, used, list, i$, len$, item, to$, idx;
+        var simplify, fill, reorder, obj, k, v, ret, ref$, used, list, i$, len$, item, to$, idx;
+        simplify = false;
         fill = function(a, h){
           var i$, len$, item, results$ = [];
           if (typeof a === typeof []) {
@@ -274,26 +275,57 @@ geoconvert = {
             }
             return results$;
           } else {
-            return h[a] = 1;
+            return h[Math.abs(a)] = 1;
           }
+        };
+        reorder = function(a, h){
+          var i$, to$, idx;
+          for (i$ = 0, to$ = a.length; i$ < to$; ++i$) {
+            idx = i$;
+            if (typeof a[idx] === typeof []) {
+              a[idx] = reorder(a[idx], h);
+            } else {
+              a[idx] = (h[Math.abs(a[idx])] - 1) * (a[idx] < 0 ? -1 : 1);
+            }
+          }
+          return a;
         };
         for (obj in topodata.objects) {
           topodata.objects[obj].geometries = (fn$());
         }
-        ref$ = [{}, []], used = ref$[0], list = ref$[1];
-        for (obj in topodata.objects) {
-          for (i$ = 0, len$ = (ref$ = topodata.objects[obj].geometries).length; i$ < len$; ++i$) {
-            item = ref$[i$];
-            fill(item.arcs, used);
+        if (simplify) {
+          ref$ = [{}, []], used = ref$[0], list = ref$[1];
+          for (obj in topodata.objects) {
+            for (i$ = 0, len$ = (ref$ = topodata.objects[obj].geometries).length; i$ < len$; ++i$) {
+              item = ref$[i$];
+              fill(item.arcs, used);
+            }
           }
+          /* this part is to remove unused arc, but somehow not work correctly
+          keys = [k for k of used]
+          keys.sort!
+          count = 1
+          for idx in keys => 
+            if used[idx] =>
+              used[idx] = count
+              count++
+          for obj of topodata.objects
+            for item in topodata.objects[obj]geometries => 
+              item.arcs = reorder item.arcs, used
+          
+          for idx from 0 til topodata.arcs.length
+            if used[idx] => list.push topodata.arcs[idx] 
+          */
+          for (i$ = 0, to$ = topodata.arcs.length; i$ < to$; ++i$) {
+            idx = i$;
+            if (used[idx]) {
+              list.push(topodata.arcs[idx]);
+            } else {
+              list.push([]);
+            }
+          }
+          topodata.arcs = list;
         }
-        for (i$ = 0, to$ = topodata.arcs.length; i$ < to$; ++i$) {
-          idx = i$;
-          list.push(used[idx]
-            ? topodata.arcs[idx]
-            : []);
-        }
-        topodata.arcs = list;
         return res(topodata);
         function fn$(){
           var ref$, results$ = [];

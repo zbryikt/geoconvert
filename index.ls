@@ -138,20 +138,52 @@ geoconvert = do
   topojson: do
 
     merge: (topodata, geometry-list-hash) -> new bluebird (res, rej) ->
+      simplify = false
       fill = (a, h) ->
         if typeof(a) == typeof([]) => [fill(item,h) for item in a]
-        else h[a] = 1
+        else h[Math.abs(a)] = 1
+
+      reorder = (a, h) ->
+        for idx from 0 til a.length =>
+          if typeof(a[idx]) == typeof([]) => 
+            a[idx] = reorder a[idx], h
+          else 
+            a[idx] = (h[Math.abs(a[idx])] - 1) * ( if a[idx] < 0 => -1 else 1 )
+        a
+
       for obj of topodata.objects =>
         topodata.objects[obj]geometries = for k,v of geometry-list-hash[obj]
           ret = topojson.mergeArcs topodata, v.list
           ret.properties = v.properties
           ret
-      [used, list] = [{}, []]
-      for obj of topodata.objects
-        for item in topodata.objects[obj]geometries => fill item.arcs, used
-      for idx from 0 til topodata.arcs.length
-        list.push if used[idx] => topodata.arcs[idx] else []
-      topodata.arcs = list
+
+      if simplify =>
+        [used, list] = [{}, []]
+
+        for obj of topodata.objects
+          for item in topodata.objects[obj]geometries => fill item.arcs, used
+
+        /* this part is to remove unused arc, but somehow not work correctly
+        keys = [k for k of used]
+        keys.sort!
+        count = 1
+        for idx in keys => 
+          if used[idx] =>
+            used[idx] = count
+            count++
+        for obj of topodata.objects
+          for item in topodata.objects[obj]geometries => 
+            item.arcs = reorder item.arcs, used
+
+        for idx from 0 til topodata.arcs.length
+          if used[idx] => list.push topodata.arcs[idx] 
+        */
+
+        for idx from 0 til topodata.arcs.length
+          if used[idx] => list.push topodata.arcs[idx] 
+          else list.push []
+
+        topodata.arcs = list
 
       res topodata
 
