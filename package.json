@@ -16,7 +16,6 @@
   },
   "dependencies": {
     "coord": "git://github.com/zbryikt/coord#master",
-    "zlib": "=1.0.5",
     "MD5": "=1.2.1",
     "bluebird": "=2.9.24",
     "osmtogeojson": "=2.2.5",
